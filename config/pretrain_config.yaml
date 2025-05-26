@@ -1,0 +1,35 @@
+# 输出目录配置
+out_dir: "out"  # 模型和日志的保存目录
+
+# 训练基本参数
+epochs: 1  # 训练轮数，建议根据数据量设置2-6轮
+batch_size: 32  # 批次大小，较大的批次有利于训练稳定性但会占用更多显存
+learning_rate: 5e-4  # 学习率，影响模型收敛速度和最终性能
+device: "cuda:0"  # 训练设备，如果cuda不可用会自动切换到cpu
+dtype: "bfloat16"  # 计算精度类型，可选float32/float16/bfloat16，较低精度可加速训练
+
+# wandb配置（用于实验追踪）
+use_wandb: false  # 是否使用wandb记录训练过程
+wandb_project: "MiniMind-Pretrain"  # wandb项目名称
+
+# 数据加载配置
+num_workers: 1  # 数据加载器的工作线程数，增加可提高数据加载速度
+data_path: "./dataset/pretrain_hq.jsonl"  # 预训练数据路径
+
+# 训练优化配置
+accumulation_steps: 8  # 梯度累积步数，可用于模拟更大的批次训练
+grad_clip: 1.0  # 梯度裁剪阈值，防止梯度爆炸导致训练不稳定
+warmup_iters: 0  # 学习率预热迭代次数，有助于训练初期稳定性
+log_interval: 100  # 日志打印间隔（步数）
+save_interval: 100  # 模型保存间隔（步数）
+
+# 模型架构配置
+dim: 512  # 模型隐藏层维度，决定模型容量
+n_layers: 8  # 模型层数，决定模型深度
+max_seq_len: 5 # 最大序列长度，影响模型对上下文的理解能力
+use_moe: false  # 是否使用混合专家模型(MoE)，可增加模型容量而不大幅增加计算量
+
+# 分布式训练配置
+local_rank: 1  # 分布式训练的本地进程编号
+
+ddp: false
