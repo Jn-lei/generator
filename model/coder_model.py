@@ -176,7 +176,7 @@ class CoderLM(PreTrainedModel):
                              precompute_pos_cis(dim=params.dim // params.n_heads, theta=params.rope_theta),
                              persistent=False)
         self.OUT = CausalLMOutputWithPast()
-
+        self.PE = 0
 
     def forward(self,
                 input_ids: Optional[torch.Tensor] = None,
@@ -201,7 +201,7 @@ class CoderLM(PreTrainedModel):
         pos_cis = self.pos_cis[start_pos:start_pos + input_ids.size(1)]
 
         for l, layer in enumerate(self.encoder):
-            h ,_ = layer(h, pos_cis)
+            h ,_ = layer(h, pos_cis if self.PE == 1 else None)
             if layer.mode == 1:
                 pos_cis = self.pos_cis[start_pos:start_pos + h.size(1)]
 
@@ -213,7 +213,7 @@ class CoderLM(PreTrainedModel):
             h = h.logits
         pos_cis = self.pos_cis[start_pos:start_pos + h.size(1)]
         pos_cis_decoder = self.pos_cis[start_pos:start_pos + text.size(1)]
-        h = self.decoder(h,text,pos_cis,pos_cis_decoder)
+        h = self.decoder(h,text,pos_cis if self.PE == 'PE' else None,pos_cis_decoder if self.PE == 'PE' else None)
 
         # 输出层
         logits = self.output(self.norm(h))
