@@ -431,7 +431,7 @@ class MiniMindLM(PreTrainedModel):
                 past_key_values: Optional[List[Tuple[torch.Tensor, torch.Tensor]]] = None,
                 use_cache: bool = False,
                 is_generator: bool = False,
-                mode: int = 0,
+                mode: int = 1,
                 **args):
         """前向传播
         Args:
