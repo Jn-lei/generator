@@ -91,7 +91,7 @@ def train_epoch(epoch, wandb):
         # 使用自动混合精度训练上下文
         with ctx:
             # 前向传播，将输入数据传入模型获取输出
-            res = model(X)
+            res = model(X, mode=args.mode)
             # 计算交叉熵损失
             # 将logits展平为[batch_size*seq_len, vocab_size]的形状
             # 将目标Y展平为[batch_size*seq_len]的形状
@@ -265,48 +265,48 @@ if __name__ == "__main__":
 
     # 初始化模型和分词器
     model, tokenizer = init_model(lm_config)
-    import torchinfo
-    torchinfo.summary(model, input_data=torch.randint(0, 100, (args.batch_size, lm_config.max_seq_len)).to(args.device))
+    # import torchinfo
+    # torchinfo.summary(model, input_data=torch.randint(0, 100, (args.batch_size, lm_config.max_seq_len)).to(args.device))
 
     
-    # # 创建预训练数据集
-    # train_ds = PretrainDataset(args.data_path, tokenizer, max_length=lm_config.max_seq_len)
-    # # 如果是分布式训练，使用DistributedSampler确保每个进程处理不同数据
-    # train_sampler = DistributedSampler(train_ds) if ddp else None
-    # # 创建数据加载器，用于批量加载训练数据
-    # train_loader = DataLoader(
-    #     train_ds,
-    #     batch_size=args.batch_size,
-    #     pin_memory=True,  # 将数据加载到固定内存中，可加速GPU传输
-    #     drop_last=False,  # 不丢弃最后一个不完整的批次
-    #     shuffle=False,    # 使用sampler时不需要shuffle
-    #     num_workers=args.num_workers,  # 数据加载的工作线程数
-    #     sampler=train_sampler
-    # )
+    # 创建预训练数据集
+    train_ds = PretrainDataset(args.data_path, tokenizer, max_length=lm_config.max_seq_len)
+    # 如果是分布式训练，使用DistributedSampler确保每个进程处理不同数据
+    train_sampler = DistributedSampler(train_ds) if ddp else None
+    # 创建数据加载器，用于批量加载训练数据
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=args.batch_size,
+        pin_memory=True,  # 将数据加载到固定内存中，可加速GPU传输
+        drop_last=False,  # 不丢弃最后一个不完整的批次
+        shuffle=False,    # 使用sampler时不需要shuffle
+        num_workers=args.num_workers,  # 数据加载的工作线程数
+        sampler=train_sampler
+    )
 
-    # # 创建梯度缩放器，用于混合精度训练（避免FP16下的数值下溢）
-    # scaler = torch.cuda.amp.GradScaler(enabled=(args.dtype in ['float16', 'bfloat16']))
-    # # 创建AdamW优化器，适合transformer模型训练
-    # optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate)
+    # 创建梯度缩放器，用于混合精度训练（避免FP16下的数值下溢）
+    scaler = torch.cuda.amp.GradScaler(enabled=(args.dtype in ['float16', 'bfloat16']))
+    # 创建AdamW优化器，适合transformer模型训练
+    optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate)
 
-    # # 在分布式训练中设置模型
-    # if ddp:
-    #     # 指定不参与分布式同步的参数，通常是位置编码等非训练参数
-    #     model._ddp_params_and_buffers_to_ignore = {"pos_cis"}
-    #     # 将模型包装为DistributedDataParallel实例，实现数据并行训练
-    #     model = DistributedDataParallel(model, device_ids=[ddp_local_rank])
+    # 在分布式训练中设置模型
+    if ddp:
+        # 指定不参与分布式同步的参数，通常是位置编码等非训练参数
+        model._ddp_params_and_buffers_to_ignore = {"pos_cis"}
+        # 将模型包装为DistributedDataParallel实例，实现数据并行训练
+        model = DistributedDataParallel(model, device_ids=[ddp_local_rank])
 
-    # # 计算每个epoch的迭代次数，用于学习率调整和训练进度估计
-    # iter_per_epoch = len(train_loader)
-    # # 训练主循环
-    # for epoch in range(args.epochs):
-    #     start_t = time.time()
-    #     # 训练一个epoch
-    #     train_epoch(epoch, wandb)
-    #     # 打印epoch总耗时
-    #     Logger(
-    #         'Epoch Total Cost:[{}/{}] time:{:.3f} '.format(
-    #             epoch + 1,
-    #             args.epochs,
-    #             (time.time() - start_t) / 60  # 转换为分钟
-    #         ))
+    # 计算每个epoch的迭代次数，用于学习率调整和训练进度估计
+    iter_per_epoch = len(train_loader)
+    # 训练主循环
+    for epoch in range(args.epochs):
+        start_t = time.time()
+        # 训练一个epoch
+        train_epoch(epoch, wandb)
+        # 打印epoch总耗时
+        Logger(
+            'Epoch Total Cost:[{}/{}] time:{:.3f} '.format(
+                epoch + 1,
+                args.epochs,
+                (time.time() - start_t) / 60  # 转换为分钟
+            ))
