@@ -65,6 +65,8 @@ def apply_rotary_emb(xq, xk, pos_cis):
         shape = [d if i == 1 or i == ndim - 1 else 1 for i, d in enumerate(x.shape)]
         return pos_cis.view(*shape)
 
+    if pos_cis is None:
+        return xq, xk   
     # 将输入转换为复数形式
     xq_ = torch.view_as_complex(xq.float().reshape(*xq.shape[:-1], -1, 2))
     xk_ = torch.view_as_complex(xk.float().reshape(*xk.shape[:-1], -1, 2))
@@ -124,6 +126,8 @@ class Attention(nn.Module):
             mask = torch.full((1, 1, args.max_seq_len, args.max_seq_len), float("-inf"))
             mask = torch.triu(mask, diagonal=1)
             self.register_buffer("mask", mask, persistent=False)
+        else:
+            self.mask = None
 
     def forward(self,
                 x: torch.Tensor,
