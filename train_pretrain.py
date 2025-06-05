@@ -41,11 +41,18 @@ def Log_detail(content):
     详细日志记录函数，将日志写入文件，在分布式训练中只在主进程上写入
     
     参数:
-        content: 要记录的内容
+        content: 要记录的内容，可以是字符串、列表或任意类型
     """
     if not ddp or dist.get_rank() == 0:
         with open(f'{args.save_dir}/pretrain_{lm_config.dim}.log', 'a') as f:
-            f.write(' '.join(content) + '\n')
+            # 处理不同类型的content
+            if isinstance(content, (list, tuple)):
+                # 将列表/元组中的所有元素转换为字符串
+                log_content = ' '.join(str(item) for item in content)
+            else:
+                # 单个元素直接转换为字符串
+                log_content = str(content)
+            f.write(log_content + '\n')
 
 def get_lr(current_step, total_steps, lr):
     """
