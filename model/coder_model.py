@@ -223,3 +223,10 @@ class CoderLM(PreTrainedModel):
         self.OUT.__setitem__('logits', logits)
         # self.OUT.__setitem__('aux_loss', aux_loss)
         return self.OUT
+    
+
+    def get_residual_weights(self):
+        if hasattr(self, 'residual_weights'):
+            return [torch.sigmoid(weight).item() for weight in self.residual_weights]
+        else:
+            return []
