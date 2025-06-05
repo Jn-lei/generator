@@ -22,7 +22,7 @@ grad_clip: 1.0  # 梯度裁剪阈值，防止梯度爆炸导致训练不稳定
 warmup_iters: 0  # 学习率预热迭代次数，有助于训练初期稳定性
 log_interval: 100  # 日志打印间隔（步数）
 save_interval: 100  # 模型保存间隔（步数）
-max_train_data: 5000  # 最大训练数据量
+max_train_data: -1  # 最大训练数据量
 
 # 模型架构配置
 dim: 512  # 模型隐藏层维度，决定模型容量

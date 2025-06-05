@@ -84,7 +84,7 @@ def train_epoch(epoch, wandb):
     total_trained = 0
     # 遍历训练数据
     for step, (X, Y, loss_mask) in enumerate(train_loader):
-        if total_trained >= args.max_train_data:
+        if args.max_train_data > 0 and total_trained >= args.max_train_data:
             break
         total_trained += X.size(0)
         # 将数据移至设备

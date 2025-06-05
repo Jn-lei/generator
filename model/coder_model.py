@@ -224,6 +224,40 @@ class CoderLM(PreTrainedModel):
         # self.OUT.__setitem__('aux_loss', aux_loss)
         return self.OUT
     
+    def generate(self, input_ids, eos_token_id, max_new_tokens, temperature, top_p, rp, use_cache, **args):
+        return self._stream(input_ids, eos_token_id, max_new_tokens, temperature, top_p, rp, use_cache, **args)
+    
+    def _stream(self, input_ids, eos_token_id, max_new_tokens, temperature, top_p, rp, use_cache, **args):
+        """流式生成文本
+        逐个token生成，支持KV缓存加速
+        """
+        start, first_seq, past_kvs = input_ids.shape[1], True, None
+        while input_ids.shape[1] < max_new_tokens - 1:
+            if first_seq or not use_cache:
+                out, first_seq = self(input_ids, past_key_values=past_kvs, use_cache=use_cache, **args), False
+            else:
+                out = self(input_ids[:, -1:], past_key_values=past_kvs, use_cache=use_cache,
+                           start_pos=input_ids.shape[1] - 1, **args)
+            logits, past_kvs = out.logits[:, -1, :], out.past_key_values
+            # 应用重复惩罚
+            logits[:, list(set(input_ids.tolist()[0]))] /= rp
+            logits /= (temperature + 1e-9)
+            # 应用核采样
+            if top_p is not None and top_p < 1.0:
+                sorted_logits, sorted_indices = torch.sort(logits, descending=True, dim=-1)
+                sorted_probs = F.softmax(sorted_logits, dim=-1)
+                cumulative_probs = torch.cumsum(sorted_probs, dim=-1)
+                sorted_indices_to_remove = cumulative_probs > top_p
+                sorted_indices_to_remove[:, 1:] = sorted_indices_to_remove[:, :-1].clone()
+                sorted_indices_to_remove[:, 0] = False
+                indices_to_remove = sorted_indices_to_remove.scatter(1, sorted_indices, sorted_indices_to_remove)
+                logits[indices_to_remove] = -float('Inf')
+            # 采样下一个token
+            input_ids_next = torch.multinomial(F.softmax(logits, dim=-1), num_samples=1)
+            input_ids = torch.cat((input_ids, input_ids_next), dim=1)
+            yield input_ids[:, start:]
+            if input_ids_next.item() == eos_token_id:
+                break
 
     def get_residual_weights(self):
         if hasattr(self, 'residual_weights'):
