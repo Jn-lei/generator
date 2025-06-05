@@ -230,3 +230,8 @@ class CoderLM(PreTrainedModel):
             return [torch.sigmoid(weight).item() for weight in self.residual_weights]
         else:
             return []
+    def print_model_parameters(self):
+        # print(f"Encoder layers: {self.encoder_layers}")
+        # print(f"Decoder layers: {self.decoder_layers}")
+        # print(f"Encoder layers: {self.encoder_layers}")
+        print(f"")
