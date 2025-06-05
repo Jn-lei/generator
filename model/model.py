@@ -178,8 +178,7 @@ class Attention(nn.Module):
             if self.mask is not None:
                 scores += self.mask[:, :, :seq_len, :seq_len]
             if self.mode == 1:
-                print('压缩注意力')
-                scores = self.attention_intergate(scores, 5, 2)
+                scores = self.attention_intergate(scores, 2, 2)
             scores = F.softmax(scores.float(), dim=-1).type_as(xq)
             scores = self.attn_dropout(scores)
             output = scores @ xv
@@ -543,16 +542,16 @@ class MiniMindLM(PreTrainedModel):
             if input_ids_next.item() == eos_token_id:
                 break
 
-    # def print_model_parameters(self):
-    #     """打印模型的所有参数信息
-    #     包括参数名称、形状和参数量
-    #     """
-    #     # 特别打印residual_weights参数
-    #     if hasattr(self, 'residual_weights'):
-    #         for i, weight in enumerate(self.residual_weights):
-    #             print(f"第{i+1}组 数值: {weight.data} 经过sigmoid后的值: {torch.sigmoid(weight).data}")
-    #     else:
-    #         print("没有residual_weights参数")
+    def print_model_parameters(self):
+        """打印模型的所有参数信息
+        包括参数名称、形状和参数量
+        """
+        # 特别打印residual_weights参数
+        if hasattr(self, 'residual_weights'):
+            for i, weight in enumerate(self.residual_weights):
+                print(f"第{i+1}组 数值: {weight.data} 经过sigmoid后的值: {torch.sigmoid(weight).data}")
+        else:
+            print("没有residual_weights参数")
 
     def get_residual_weights(self):
         if hasattr(self, 'residual_weights'):

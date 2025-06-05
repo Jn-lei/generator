@@ -81,9 +81,12 @@ def train_epoch(epoch, wandb):
     loss_fct = nn.CrossEntropyLoss(reduction='none')
     start_time = time.time()
     last_time = time.time()
-    
+    total_trained = 0
     # 遍历训练数据
     for step, (X, Y, loss_mask) in enumerate(train_loader):
+        if total_trained >= args.max_train_data:
+            break
+        total_trained += X.size(0)
         # 将数据移至设备
         X = X.to(args.device)  # 输入序列
         Y = Y.to(args.device)  # 目标序列
