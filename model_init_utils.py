@@ -9,7 +9,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from model.model import MiniMindLM
 from model.LMConfig import LMConfig
 from model.model_lora import apply_lora, load_lora
-from model.model import CoderLM
+from model.coder_model import CoderLM
 warnings.filterwarnings('ignore')
 
 
