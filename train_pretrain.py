@@ -104,7 +104,7 @@ def train_epoch(epoch, wandb):
             # loss_mask用于忽略填充位置的损失
             loss = (loss * loss_mask).sum() / loss_mask.sum()
             # 加上辅助损失（如MoE的负载平衡损失等）
-            if res.aux_loss is not None:
+            if hasattr(res, 'aux_loss'):
                 loss += res.aux_loss
             # 梯度累积：除以累积步数，实现大批次训练效果
             loss = loss / args.accumulation_steps
