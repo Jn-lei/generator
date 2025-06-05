@@ -7,6 +7,7 @@ from typing import List
 class LMConfig(PretrainedConfig):
     # 0: 表示 "coder"  1 ：表示 generator
     model_type: int = 0
+    mode: int = 1 # 0: 只编码 1 编码-解码 2 编码-生成-解码
     dim: int = 10
     n_layers: int = 8
     encoder_layers: int = 4
