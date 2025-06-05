@@ -39,9 +39,11 @@ def convert_transformers2torch(transformers_path, torch_path):
 # don't need to use
 def push_to_hf(export_model_path):
     def init_model():
-        tokenizer = AutoTokenizer.from_pretrained('../model/minimind_tokenizer')
-        model = AutoModelForCausalLM.from_pretrained(export_model_path, trust_remote_code=True)
-        return model, tokenizer
+        import sys
+        import os
+        sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+        from model_init_utils import ModelInitializer
+        return ModelInitializer.init_convert_model()
 
     model, tokenizer = init_model()
     # model.push_to_hub(model_path)

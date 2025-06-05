@@ -154,9 +154,11 @@ class CoderLM(PreTrainedModel):
     """
     config_class = LMConfig
 
-    def __init__(self, params: LMConfig = None):
+    def __init__(self,  params: LMConfig = None):
+        '''mode: 0 只编码 ， 1 编码-解码 ， 2 编码-生成-解码'''
         self.params = params or LMConfig()
         super().__init__(self.params)
+        self.mode = params.mode
         self.vocab_size, self.n_layers = params.vocab_size, params.n_layers
         self.encoder_layers=params.encoder_layers
         self.lc = params.lc
@@ -182,14 +184,13 @@ class CoderLM(PreTrainedModel):
                 input_ids: Optional[torch.Tensor] = None,
                 past_key_values: Optional[List[Tuple[torch.Tensor, torch.Tensor]]] = None,
                 use_cache: bool = False,
-                mode: int = 2,
+                
                 **args):
         """前向传播
         Args:
             input_ids: 输入token ID
             past_key_values: 用于加速生成的KV缓存
             use_cache: 是否使用KV缓存
-            mode: 0 只编码 ， 1 编码-解码 ， 2 编码-生成-解码
         Returns:
             模型输出，包含logits和past_key_values
         """
@@ -205,10 +206,10 @@ class CoderLM(PreTrainedModel):
             if layer.mode == 1:
                 pos_cis = self.pos_cis[start_pos:start_pos + h.size(1)]
 
-        if mode == 0:
+        if self.mode == 0:
             return h
         
-        if mode == 2:
+        if self.mode == 2:
             h = self.generater(h,is_generator=True)
             h = h.logits
         pos_cis = self.pos_cis[start_pos:start_pos + h.size(1)]
@@ -221,3 +222,4 @@ class CoderLM(PreTrainedModel):
         # aux_loss = sum(l.feed_forward.aux_loss for l in self.layers if isinstance(l.feed_forward, MOEFeedForward))
         self.OUT.__setitem__('logits', logits)
         # self.OUT.__setitem__('aux_loss', aux_loss)
+        return self.OUT

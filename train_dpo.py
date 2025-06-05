@@ -132,23 +132,8 @@ def train_epoch(epoch, wandb):
 
 
 def init_model(lm_config):
-    tokenizer = AutoTokenizer.from_pretrained('./model/minimind_tokenizer')
-    model = MiniMindLM(lm_config)
-    moe_path = '_moe' if lm_config.use_moe else ''
-    ckp = f'./out/full_sft_{lm_config.dim}{moe_path}.pth'
-    state_dict = torch.load(ckp, map_location=args.device)
-    model.load_state_dict(state_dict, strict=False)
-    # 初始化参考模型
-    ref_model = MiniMindLM(lm_config)
-    ref_model.load_state_dict(state_dict, strict=False)
-    ref_model.eval()
-    ref_model.requires_grad_(False)
-
-    Logger(f'LLM总参数量：{sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.3f} 百万')
-    model = model.to(args.device)
-    ref_model = ref_model.to(args.device)
-
-    return model, ref_model, tokenizer
+    from model_init_utils import ModelInitializer
+    return ModelInitializer.init_dpo_model(lm_config, args.device)
 
 
 def init_distributed_mode():

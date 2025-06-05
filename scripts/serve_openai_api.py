@@ -23,32 +23,11 @@ app = FastAPI()
 
 
 def init_model(args):
-    tokenizer = AutoTokenizer.from_pretrained('../model/minimind_tokenizer')
-    if args.load == 0:
-        moe_path = '_moe' if args.use_moe else ''
-        modes = {0: 'pretrain', 1: 'full_sft', 2: 'rlhf', 3: 'reason'}
-        ckp = f'../{args.out_dir}/{modes[args.model_mode]}_{args.dim}{moe_path}.pth'
-
-        model = MiniMindLM(LMConfig(
-            dim=args.dim,
-            n_layers=args.n_layers,
-            max_seq_len=args.max_seq_len,
-            use_moe=args.use_moe
-        ))
-
-        state_dict = torch.load(ckp, map_location=device)
-        model.load_state_dict({k: v for k, v in state_dict.items() if 'mask' not in k}, strict=True)
-
-        if args.lora_name != 'None':
-            apply_lora(model)
-            load_lora(model, f'../{args.out_dir}/{args.lora_name}_{args.dim}.pth')
-    else:
-        model = AutoModelForCausalLM.from_pretrained(
-            './MiniMind2',
-            trust_remote_code=True
-        )
-    print(f'MiniMind模型参数量: {sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.2f}M(illion)')
-    return model.eval().to(device), tokenizer
+    import sys
+    import os
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    from model_init_utils import ModelInitializer
+    return ModelInitializer.init_openai_api_model(args, device)
 
 
 class ChatRequest(BaseModel):

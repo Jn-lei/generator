@@ -4,7 +4,7 @@ out_dir: "out"  # 模型和日志的保存目录
 # 训练基本参数
 epochs: 1  # 训练轮数，建议根据数据量设置2-6轮
 batch_size: 32  # 批次大小，较大的批次有利于训练稳定性但会占用更多显存
-learning_rate: 5e-4  # 学习率，影响模型收敛速度和最终性能
+learning_rate: 0.0005  # 学习率，影响模型收敛速度和最终性能
 device: "cuda:0"  # 训练设备，如果cuda不可用会自动切换到cpu
 dtype: "bfloat16"  # 计算精度类型，可选float32/float16/bfloat16，较低精度可加速训练
 

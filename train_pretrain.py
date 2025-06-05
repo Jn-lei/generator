@@ -91,7 +91,7 @@ def train_epoch(epoch, wandb):
         # 使用自动混合精度训练上下文
         with ctx:
             # 前向传播，将输入数据传入模型获取输出
-            res = model(X, mode=args.mode)
+            res = model(X)
             # 计算交叉熵损失
             # 将logits展平为[batch_size*seq_len, vocab_size]的形状
             # 将目标Y展平为[batch_size*seq_len]的形状
@@ -104,7 +104,8 @@ def train_epoch(epoch, wandb):
             # loss_mask用于忽略填充位置的损失
             loss = (loss * loss_mask).sum() / loss_mask.sum()
             # 加上辅助损失（如MoE的负载平衡损失等）
-            loss += res.aux_loss
+            if res.aux_loss is not None:
+                loss += res.aux_loss
             # 梯度累积：除以累积步数，实现大批次训练效果
             loss = loss / args.accumulation_steps
 
@@ -182,15 +183,8 @@ def init_model(lm_config:LMConfig):
         model: 初始化的模型
         tokenizer: 初始化的分词器
     """
-    tokenizer = AutoTokenizer.from_pretrained('./model/minimind_tokenizer')
-    if lm_config.model_type == 0:
-        print("使用coder模型")
-        model = CoderLM(lm_config).to(args.device)
-    else:
-        print("使用generator模型")
-        model = MiniMindLM(lm_config).to(args.device)
-    Logger(f'LLM总参数量：{sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6:.3f} 百万')
-    return model, tokenizer
+    from model_init_utils import ModelInitializer
+    return ModelInitializer.init_pretrain_model(lm_config, args.device)
 
 
 def init_distributed_mode():
